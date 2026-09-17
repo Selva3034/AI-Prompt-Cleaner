@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Promptly AI — Prompt Cleaner</title>
+
+    <meta name="description"
+        content="Transform rough ideas into clear, structured and powerful AI prompts.">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap"
+        rel="stylesheet">
+
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <!-- Background decoration -->
+    <div class="background-glow glow-one"></div>
+    <div class="background-glow glow-two"></div>
+
+    <!-- Navigation -->
+    <nav class="navbar">
+
+        <div class="brand">
+            <div class="brand-icon">✦</div>
+            <span>Promptly<span class="brand-ai"> AI</span></span>
+        </div>
+
+        <div class="nav-right">
+            <span class="status-dot"></span>
+            <span>AI Prompt Optimizer</span>
+        </div>
+
+    </nav>
+
+
+    <!-- Main -->
+    <main class="container">
+
+        <!-- Hero -->
+        <section class="hero">
+
+            <div class="badge">
+                <span>✦</span>
+                AI-powered prompt improvement
+            </div>
+
+            <h1>
+                Turn rough ideas into
+                <span>better prompts.</span>
+            </h1>
+
+            <p class="hero-description">
+                Write naturally. Let AI transform your thoughts into
+                clear, structured and effective prompts.
+            </p>
+
+        </section>
+
+
+        <!-- Workspace -->
+        <section class="workspace">
+
+            <!-- Input Card -->
+            <div class="card input-card">
+
+                <div class="card-header">
+
+                    <div>
+                        <span class="label">YOUR ROUGH PROMPT</span>
+                        <h2>What do you want to create?</h2>
+                    </div>
+
+                    <div class="step-number">01</div>
+
+                </div>
+
+
+                <!-- Prompt Type -->
+                <div class="field">
+
+                    <label for="promptType">
+                        Prompt type
+                    </label>
+
+                    <div class="select-wrapper">
+
+                        <select id="promptType">
+
+                            <option value="general">
+                                General
+                            </option>
+
+                            <option value="coding">
+                                Coding
+                            </option>
+
+                            <option value="study">
+                                Study & Learning
+                            </option>
+
+                            <option value="writing">
+                                Writing
+                            </option>
+
+                            <option value="business">
+                                Business
+                            </option>
+
+                            <option value="creative">
+                                Creative
+                            </option>
+
+                        </select>
+
+                        <span class="select-arrow">⌄</span>
+
+                    </div>
+
+                </div>
+
+
+                <!-- Prompt Input -->
+                <div class="field">
+
+                    <div class="textarea-header">
+
+                        <label for="promptInput">
+                            Your prompt
+                        </label>
+
+                        <span id="charCount">
+                            0 / 2000
+                        </span>
+
+                    </div>
+
+                    <textarea
+                        id="promptInput"
+                        maxlength="2000"
+                        placeholder="Example: make a website for students using python with login and course features..."
+                    ></textarea>
+
+                </div>
+
+
+                <!-- Actions -->
+                <div class="input-actions">
+
+                    <button
+                        class="clear-btn"
+                        id="clearBtn"
+                        type="button"
+                    >
+                        Clear
+                    </button>
+
+                    <button
+                        class="clean-btn"
+                        id="cleanBtn"
+                        type="button"
+                    >
+
+                        <span class="sparkle">✦</span>
+
+                        Clean Prompt
+
+                        <span class="arrow">→</span>
+
+                    </button>
+
+                </div>
+
+            </div>
+
+
+            <!-- Output Card -->
+            <div class="card output-card">
+
+                <div class="card-header">
+
+                    <div>
+
+                        <span class="label">AI RESULT</span>
+
+                        <h2>Your improved prompt</h2>
+
+                    </div>
+
+                    <div class="step-number">02</div>
+
+                </div>
+
+
+                <!-- Empty State -->
+                <div
+                    class="result-area"
+                    id="resultArea"
+                >
+
+                    <div class="empty-state">
+
+                        <div class="empty-icon">
+                            ✦
+                        </div>
+
+                        <h3>
+                            Your improved prompt will appear here
+                        </h3>
+
+                        <p>
+                            Enter your rough idea and let AI
+                            structure it for you.
+                        </p>
+
+                    </div>
+
+                </div>
+
+
+                <!-- Result Actions -->
+                <div
+                    class="result-actions"
+                    id="resultActions"
+                    style="display: none;"
+                >
+
+                    <span class="success-text">
+                        <span class="success-dot"></span>
+                        Prompt optimized
+                    </span>
+
+                    <button
+                        class="copy-btn"
+                        id="copyBtn"
+                        type="button"
+                    >
+                        <span>▣</span>
+                        Copy
+                    </button>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- Features -->
+        <section class="features">
+
+            <div class="feature">
+
+                <div class="feature-icon">
+                    ✦
+                </div>
+
+                <div>
+                    <h3>Clearer</h3>
+                    <p>Removes unnecessary wording.</p>
+                </div>
+
+            </div>
+
+
+            <div class="feature">
+
+                <div class="feature-icon">
+                    ◈
+                </div>
+
+                <div>
+                    <h3>Structured</h3>
+                    <p>Organizes your ideas logically.</p>
+                </div>
+
+            </div>
+
+
+            <div class="feature">
+
+                <div class="feature-icon">
+                    ◎
+                </div>
+
+                <div>
+                    <h3>AI-ready</h3>
+                    <p>Designed for better AI responses.</p>
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- Footer -->
+        <footer>
+
+            <span>
+                Promptly AI
+            </span>
+
+            <span class="footer-separator">•</span>
+
+            <span>
+                Built with Python & AI
+            </span>
+
+        </footer>
+
+    </main>
+
+
+    <script src="script.js"></script>
+
+</body>
+</html>
