@@ -1,204 +1,366 @@
-from flask import Flask, request, jsonify
-from flask_cors import CORS
-from openai import OpenAI
-from dotenv import load_dotenv
 import os
 
+from flask import Flask, jsonify, request
+from flask_cors import CORS
+from dotenv import load_dotenv
+from openai import OpenAI
 
-# ============================================================
-# ENVIRONMENT VARIABLES
-# ============================================================
 
-# Local development:
-# Load backend/.env if it exists.
-# On Vercel, environment variables are provided automatically.
+# =========================================
+# LOAD ENVIRONMENT
+# =========================================
+
+BASE_DIR = os.path.dirname(
+    os.path.dirname(
+        os.path.abspath(__file__)
+    )
+)
+
+
+# Load local backend/.env when running locally.
 load_dotenv(
     os.path.join(
-        os.path.dirname(__file__),
-        "..",
+        BASE_DIR,
         "backend",
         ".env"
     )
 )
 
-
-# ============================================================
-# FLASK APPLICATION
-# ============================================================
-
-app = Flask(__name__)
-
-# CORS is useful during local development.
-# Production frontend and backend are same-origin on Vercel.
-CORS(app)
+# Also load normal .env if available.
+load_dotenv()
 
 
-# ============================================================
-# GROQ API CONFIGURATION
-# ============================================================
-
-GROQ_API_KEY = os.getenv("GROQ_API_KEY")
-
-client = OpenAI(
-    api_key=GROQ_API_KEY,
-    base_url="https://api.groq.com/openai/v1"
+groq_api_key = os.getenv(
+    "GROQ_API_KEY"
 )
 
 
-# ============================================================
-# HEALTH CHECK
-# ============================================================
+# =========================================
+# FLASK
+# =========================================
 
-@app.route("/", methods=["GET"])
-def home():
-    return jsonify({
-        "success": True,
-        "message": "Promptly AI backend is running"
-    })
+app = Flask(__name__)
+
+CORS(app)
 
 
-@app.route("/api", methods=["GET"])
-def api_health():
-    return jsonify({
-        "success": True,
-        "message": "Promptly AI API is running"
-    })
+# =========================================
+# GROQ CLIENT
+# =========================================
+
+client = None
+
+if groq_api_key:
+
+    client = OpenAI(
+
+        api_key=groq_api_key,
+
+        base_url=(
+            "https://api.groq.com/openai/v1"
+        )
+    )
 
 
-# ============================================================
-# CLEAN PROMPT API
-# ============================================================
+# =========================================
+# CONFIG
+# =========================================
 
-@app.route("/api/clean-prompt", methods=["POST"])
-@app.route("/clean-prompt", methods=["POST"])
-def clean_prompt():
+MAX_PROMPT_LENGTH = 2000
 
-    try:
-
-        # ----------------------------------------------------
-        # Get JSON request
-        # ----------------------------------------------------
-
-        data = request.get_json(silent=True)
-
-        if not data:
-            return jsonify({
-                "success": False,
-                "error": "Invalid request data."
-            }), 400
+ALLOWED_TYPES = {
+    "General",
+    "Coding",
+    "Writing",
+    "Marketing",
+    "Learning",
+    "Creative"
+}
 
 
-        # ----------------------------------------------------
-        # Get user input
-        # ----------------------------------------------------
+SYSTEM_INSTRUCTION = """
+You are Promptly AI, an expert prompt improvement assistant.
 
-        prompt = data.get("prompt", "").strip()
-        prompt_type = data.get("type", "general")
-
-
-        # ----------------------------------------------------
-        # Validate prompt
-        # ----------------------------------------------------
-
-        if not prompt:
-            return jsonify({
-                "success": False,
-                "error": "Please enter a prompt."
-            }), 400
-
-
-        # ----------------------------------------------------
-        # Check API key
-        # ----------------------------------------------------
-
-        if not GROQ_API_KEY:
-            return jsonify({
-                "success": False,
-                "error": "GROQ_API_KEY is not configured."
-            }), 500
-
-
-        # ----------------------------------------------------
-        # Prompt optimization instructions
-        # ----------------------------------------------------
-
-        system_instruction = f"""
-You are Promptly AI, an expert prompt optimization assistant.
-
-Your job is to transform a user's rough idea into a clear,
+Your job is to transform a rough user idea into a clear,
 specific, structured and effective AI prompt.
 
-Prompt category:
-{prompt_type}
+Follow these rules:
 
-Improve the user's prompt while preserving the user's
-original intention.
-
-The improved prompt should:
-
-- Clearly define the task
-- Add useful context when appropriate
-- Specify the expected output
-- Remove unnecessary wording
-- Be easy for another AI model to understand
-- Make the prompt specific and actionable
-- Preserve the original intention
-- Not invent requirements that were not implied by the user
-
-Return ONLY the improved prompt.
-
-Do not explain what you changed.
-Do not add headings such as "Improved Prompt".
-Do not add unnecessary commentary.
+1. Preserve the user's original intention.
+2. Do not invent requirements that the user did not request.
+3. Remove unnecessary wording.
+4. Add useful context when it is directly implied.
+5. Make the desired output clear.
+6. Use structured instructions when appropriate.
+7. Make the prompt practical for an AI model to follow.
+8. Do not explain what you changed.
+9. Return ONLY the improved prompt.
 """
 
 
-        # ----------------------------------------------------
-        # Send request to Groq
-        # ----------------------------------------------------
+# =========================================
+# HOME
+# =========================================
+
+@app.route("/", methods=["GET"])
+def home():
+
+    return jsonify({
+
+        "status": "success",
+
+        "message":
+            "Promptly AI API is running"
+    })
+
+
+# =========================================
+# API STATUS
+# =========================================
+
+@app.route("/api", methods=["GET"])
+def api_status():
+
+    return jsonify({
+
+        "status": "success",
+
+        "message":
+            "Promptly AI API is running"
+    })
+
+
+# =========================================
+# CLEAN PROMPT
+# =========================================
+
+@app.route(
+    "/api/clean-prompt",
+    methods=["POST"]
+)
+def clean_prompt():
+
+    # -------------------------------------
+    # Validate request
+    # -------------------------------------
+
+    if not request.is_json:
+
+        return jsonify({
+
+            "success": False,
+
+            "error":
+                "Request must contain JSON data."
+
+        }), 400
+
+
+    data = request.get_json(
+        silent=True
+    )
+
+
+    if not isinstance(data, dict):
+
+        return jsonify({
+
+            "success": False,
+
+            "error":
+                "Invalid request data."
+
+        }), 400
+
+
+    # -------------------------------------
+    # Read input
+    # -------------------------------------
+
+    prompt = data.get(
+        "prompt",
+        ""
+    )
+
+    prompt_type = data.get(
+        "type",
+        "General"
+    )
+
+
+    # -------------------------------------
+    # Validate prompt
+    # -------------------------------------
+
+    if not isinstance(prompt, str):
+
+        return jsonify({
+
+            "success": False,
+
+            "error":
+                "Prompt must be text."
+
+        }), 400
+
+
+    prompt = prompt.strip()
+
+
+    if not prompt:
+
+        return jsonify({
+
+            "success": False,
+
+            "error":
+                "Please enter a prompt."
+
+        }), 400
+
+
+    if len(prompt) > MAX_PROMPT_LENGTH:
+
+        return jsonify({
+
+            "success": False,
+
+            "error": (
+                "Prompt cannot exceed "
+                f"{MAX_PROMPT_LENGTH} characters."
+            )
+
+        }), 400
+
+
+    # -------------------------------------
+    # Prompt type
+    # -------------------------------------
+
+    if not isinstance(
+        prompt_type,
+        str
+    ):
+
+        prompt_type = "General"
+
+
+    if prompt_type not in ALLOWED_TYPES:
+
+        prompt_type = "General"
+
+
+    # -------------------------------------
+    # API key
+    # -------------------------------------
+
+    if not groq_api_key or client is None:
+
+        return jsonify({
+
+            "success": False,
+
+            "error": (
+                "AI service is not configured."
+            )
+
+        }), 500
+
+
+    # -------------------------------------
+    # AI input
+    # -------------------------------------
+
+    user_input = f"""
+Prompt Type: {prompt_type}
+
+User's rough prompt:
+{prompt}
+"""
+
+
+    # -------------------------------------
+    # Groq request
+    # -------------------------------------
+
+    try:
 
         response = client.responses.create(
+
             model="openai/gpt-oss-20b",
-            instructions=system_instruction,
-            input=prompt
+
+            instructions=SYSTEM_INSTRUCTION,
+
+            input=user_input
         )
 
 
-        # ----------------------------------------------------
-        # Get AI result
-        # ----------------------------------------------------
+        improved_prompt = (
+            response.output_text
+            if response.output_text
+            else ""
+        )
 
-        improved_prompt = response.output_text.strip()
+
+        improved_prompt = (
+            improved_prompt.strip()
+        )
 
 
-        # ----------------------------------------------------
-        # Return result
-        # ----------------------------------------------------
+        if not improved_prompt:
+
+            return jsonify({
+
+                "success": False,
+
+                "error":
+                    "The AI returned an empty result."
+
+            }), 502
+
 
         return jsonify({
+
             "success": True,
-            "improved_prompt": improved_prompt
-        })
+
+            "improved_prompt":
+                improved_prompt
+
+        }), 200
 
 
     except Exception as error:
 
-        # Print the real error in Vercel/local logs
-        print("Error:", error)
+        print(
+            "Groq API error:",
+            str(error)
+        )
+
 
         return jsonify({
+
             "success": False,
-            "error": "Something went wrong while processing your prompt."
+
+            "error": (
+                "Unable to improve the prompt "
+                "right now. Please try again."
+            )
+
         }), 500
 
 
-# ============================================================
-# LOCAL DEVELOPMENT
-# ============================================================
+# =========================================
+# 404
+# =========================================
 
-if __name__ == "__main__":
-    app.run(
-        host="127.0.0.1",
-        port=5000,
-        debug=True
-    )
+@app.errorhandler(404)
+def not_found(error):
+
+    return jsonify({
+
+        "success": False,
+
+        "error":
+            "Endpoint not found."
+
+    }), 404
